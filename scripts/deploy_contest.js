@@ -1,6 +1,5 @@
 const hre = require("hardhat");
 const fs = require('fs');
-const constants = require('./constants.js');
 
 async function main() {
     const registryAddress = fs.readFileSync(`deployed/${hre.network.name}.ContestRegistry`).toString();
@@ -10,7 +9,7 @@ async function main() {
 
     const index = await registry.numContests().then(num => num.toNumber());
     console.log('contest', index);
-    const deployArgs = constants.contests[index];
+    const deployArgs = require(`./contests/args_${index}.js`);
     console.log(deployArgs);
     if (!deployArgs) {
         throw `no deploy args for contest ${index}`;
