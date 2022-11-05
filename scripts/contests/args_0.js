@@ -2,12 +2,12 @@ const constants = require('../constants.js');
 
 module.exports = [
     constants.DATA_ADDRESS,
-    1,
-    3,
-    constants.formatData(300),
-    constants.formatData(200),
-    constants.formatData(150),
-    constants.formatData(100),
+    5,
+    12,
+    constants.formatData(500),
+    constants.formatData(3500),
+    constants.formatData(1200),
+    constants.formatData(1000),
     'total',
     `# Inaugural
 
