@@ -65,6 +65,20 @@ npx hardhat --network localhost end --contest $(cat deployed/localhost.RunContes
 npx hardhat --network localhost withdraw --contest $(cat deployed/localhost.RunContest.1)
 ```
 
+## polygonscan verification
+
+For the registry, which should only be necessary once:
+
+```shell
+npx hardhat --network polygon verify $(cat deployed/polygon.ContestRegistry)
+```
+
+Each time you deploy a new contest (make sure to increment the contest index):
+
+```shell
+npx hardhat --network polygon verify --constructor-args scripts/contests/args_0.js $(cat deployed/polygon.RunContest.0)
+```
+
 ## hardhat development
 
 Try running some of the following tasks:
