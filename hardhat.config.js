@@ -63,7 +63,7 @@ task('cancel', 'Cancel a contest')
     .setAction(async ({ contest }, hre) => {
         await hre.ethers.getContractAt(contestAbi, contest, hre.ethers.provider.getSigner()).then(contract => {
             return contract.cancelContest();
-        }).then(() => {
+        }).then(tx => tx.wait()).then(() => {
             console.log('canceled');
         });
     });
@@ -76,9 +76,9 @@ task('register', 'Register a runner for a contest')
         const contestContract = await hre.ethers.getContractAt(contestAbi, contest, hre.ethers.provider.getSigner());
         return contestContract.entryFee().then(entryFee => {
             return dataContract.approve(contest, entryFee);
-        }).then(() => {
+        }).then(tx => tx.wait()).then(() => {
             return contestContract.registerRunner(runner);
-        }).then(() => {
+        }).then(tx => tx.wait()).then(() => {
             console.log('registered', runner);
         });
     });
@@ -89,6 +89,7 @@ task('refund', 'Refund a runner for a canceled contest')
     .setAction(async ({ contest, runner }, hre) => {
         const contestContract = await hre.ethers.getContractAt(contestAbi, contest, hre.ethers.provider.getSigner());
         return contestContract.processRefund(runner)
+            .then(tx => tx.wait())
             .then(() => {
                 console.log('refunded', runner);
             });
@@ -99,6 +100,7 @@ task('start', 'Start a contest')
     .setAction(async ({ contest }, hre) => {
         const contestContract = await hre.ethers.getContractAt(contestAbi, contest, hre.ethers.provider.getSigner());
         return contestContract.startContest()
+            .then(tx => tx.wait())
             .then(() => {
                 console.log('started', contest);
             });
@@ -111,7 +113,12 @@ task('end', 'Start a contest')
     .addParam('third', 'the third place runner id')
     .setAction(async ({ contest, first, second, third }, hre) => {
         const contestContract = await hre.ethers.getContractAt(contestAbi, contest, hre.ethers.provider.getSigner());
-        return contestContract.endContest(first, second, third)
+        return hre.ethers.provider.getFeeData().then(feeData => {
+            const opts = {
+                gasPrice: feeData.gasPrice.mul(2),
+            };
+            return contestContract.endContest(first, second, third, opts);
+        }).then(tx => tx.wait())
             .then(() => {
                 console.log('ended', contest);
             });
@@ -122,6 +129,7 @@ task('withdraw', 'Withdraw the DATA from a contest')
     .setAction(async ({ contest }, hre) => {
         const contestContract = await hre.ethers.getContractAt(contestAbi, contest, hre.ethers.provider.getSigner());
         return contestContract.withdraw()
+            .then(tx => tx.wait())
             .then(() => {
                 console.log('withdrew', contest);
             });
