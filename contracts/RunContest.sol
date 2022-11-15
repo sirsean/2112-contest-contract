@@ -83,9 +83,13 @@ contract RunContest is Ownable {
     function endContest(uint256 first, uint256 second, uint256 third) public onlyOwner {
         require(startTimestamp != 0, 'contest must be started');
         require(endTimestamp < block.timestamp, 'contest must be over');
+        require(!winnersSet, 'cannot end multiple times');
         require(runnerPayers[first] != address(0), 'winners must be registered');
         require(runnerPayers[second] != address(0), 'winners must be registered');
         require(runnerPayers[third] != address(0), 'winners must be registered');
+        require(first != second, 'winners must be unique');
+        require(first != third, 'winners must be unique');
+        require(second != third, 'winners must be unique');
 
         winnerFirst = first;
         winnerSecond = second;
@@ -117,7 +121,7 @@ contract RunContest is Ownable {
     function withdraw() public onlyOwner {
         require(started(), 'not started');
         require(!withdrawn, 'already withdrawn');
-        uint256 amount = IERC20(DATA).balanceOf(address(this)) - payoutFirst - payoutSecond - payoutThird;
+        uint256 amount = (runnerIds.length * entryFee) - payoutFirst - payoutSecond - payoutThird;
         require(amount > 0, 'nothing to withdraw');
 
         withdrawn = true;

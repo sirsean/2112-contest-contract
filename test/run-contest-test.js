@@ -209,6 +209,26 @@ describe('withdrawing', async () => {
         const balanceAfter = await dataContract.balanceOf(owner.address);
         expect(balanceAfter).to.equal(balanceBefore.add(3000 - 175));
     });
+
+    it('can withdraw after everyone collects their winnings', async () => {
+        const balanceBefore = await dataContract.balanceOf(owner.address);
+        await dataContract.connect(whale).approve(contract.address, 5000);
+        await contract.connect(whale).registerRunner(1);
+        await contract.connect(whale).registerRunner(2);
+        await contract.connect(whale).registerRunner(3);
+        await contract.connect(whale).registerRunner(4);
+        await contract.connect(whale).registerRunner(5);
+        await contract.startContest();
+        await ethers.provider.send('evm_increaseTime', [10*24*3600+1]);
+        await ethers.provider.send('evm_mine');
+        await contract.endContest(1, 2, 3);
+        await contract.collectWinnings(1);
+        await contract.collectWinnings(2);
+        await contract.collectWinnings(3);
+        await contract.withdraw();
+        const balanceAfter = await dataContract.balanceOf(owner.address);
+        expect(balanceAfter).to.equal(balanceBefore.add(5000 - 175));
+    });
 });
 
 describe('ending', async () => {
@@ -236,6 +256,33 @@ describe('ending', async () => {
         await expect(contract.endContest(1, 2, 4)).to.be.revertedWith('winners must be registered');
         await expect(contract.endContest(1, 4, 3)).to.be.revertedWith('winners must be registered');
         await expect(contract.endContest(4, 2, 3)).to.be.revertedWith('winners must be registered');
+    });
+
+    it('the same runner cannot win multiple times', async () => {
+        await dataContract.connect(whale).approve(contract.address, 3000);
+        await contract.connect(whale).registerRunner(1);
+        await contract.connect(whale).registerRunner(2);
+        await contract.connect(whale).registerRunner(3);
+        await contract.startContest();
+        await ethers.provider.send('evm_increaseTime', [10*24*3600+1]);
+        await ethers.provider.send('evm_mine');
+        await expect(contract.endContest(1, 1, 1)).to.be.revertedWith('winners must be unique');
+        await expect(contract.endContest(1, 1, 2)).to.be.revertedWith('winners must be unique');
+        await expect(contract.endContest(1, 2, 1)).to.be.revertedWith('winners must be unique');
+        await expect(contract.endContest(1, 2, 2)).to.be.revertedWith('winners must be unique');
+        await expect(contract.endContest(2, 2, 1)).to.be.revertedWith('winners must be unique');
+    });
+
+    it('cannot end multiple times', async () => {
+        await dataContract.connect(whale).approve(contract.address, 3000);
+        await contract.connect(whale).registerRunner(1);
+        await contract.connect(whale).registerRunner(2);
+        await contract.connect(whale).registerRunner(3);
+        await contract.startContest();
+        await ethers.provider.send('evm_increaseTime', [10*24*3600+1]);
+        await ethers.provider.send('evm_mine');
+        await contract.endContest(1, 2, 3);
+        await expect(contract.endContest(1, 2, 3)).to.be.revertedWith('cannot end multiple times');
     });
 
     it('sets the winning runners', async () => {
